@@ -1,4 +1,4 @@
-name: POC module based execution
+name: DEV module based execution
 
 on:
   workflow_dispatch:
