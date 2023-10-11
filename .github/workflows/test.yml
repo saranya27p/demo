@@ -1,6 +1,9 @@
 name: POC and test
 
 on: 
+  push:
+    branches:
+      - poc
   workflow_dispatch: 
     inputs:
       terraform_action:
