@@ -15,18 +15,6 @@ on:
         description: Select terraform Module
         default: product_rg
         options: 
-          - aks-cluster
-          - aks-externalService-proxies
-          - ampls
-          - applications-helm
-          - ekyc
-          - esign
-          - fluxcd
-          - kubernetes-helm
-          - monitoring
-          - ocr
-          - otds
-          - postgresql
           - product_rg
           - smtp-relay
 env:
