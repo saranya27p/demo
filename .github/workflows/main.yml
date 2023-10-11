@@ -1,4 +1,4 @@
-name: master
+name: master module based execution
 
 on: 
   workflow_dispatch: 
