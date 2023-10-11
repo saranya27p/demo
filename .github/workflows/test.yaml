@@ -1,4 +1,4 @@
-name: poc
+name: test
 
 on: 
   push:
