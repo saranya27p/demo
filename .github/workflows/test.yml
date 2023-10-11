@@ -1,4 +1,4 @@
-name: POC and test
+name: test
 
 on: 
   push:
