@@ -7,13 +7,12 @@ on:
   workflow_dispatch: 
     inputs:
       terraform_action:
+        type: option
         description: Select terraform action
         default: plan
         options: 
           - apply
           - plan
-      terraform_module:
-        description: Select terraform Module
 jobs:
   Terraform_Apply_Plan:
     runs-on: ubuntu-latest
