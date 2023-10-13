@@ -1,0 +1,55 @@
+name: dev
+
+on: 
+  push:
+    branches:
+      - dev
+  workflow_dispatch: 
+    inputs:
+      terraform_action:
+        description: Select terraform action
+        default: plan
+        options: 
+          - apply
+          - plan
+      terraform_module:
+        description: Select terraform Module
+jobs:
+  Terraform_Apply_Plan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+            terraform_version: 1.5.5
+
+      - name: 'Az CLI Login'
+        uses: azure/login@v1
+        with: 
+          creds: ${{ secrets.AZURE_CREDENTIALS}}
+   
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v1
+
+      - name: Show terraform version
+        run: |
+          cd ${TF_PATH}
+          terraform version
+      - name: Terraform Init
+        run: |
+          cd ${TF_PATH}
+          terraform init  -backend-config="resource_group_name=${BACKEND_CONFIG_RESOURCE_GROUP_NAME}" -backend-config="storage_account_name=${BACKEND_CONFIG_STORAGE_ACCOUNT_NAME}" -backend-config="container_name=${BACKEND_CONFIG_CONTAINER_NAME}" -backend-config="key=${BACKEND_CONFIG_KEY}"
+      - name: Terraform Validate
+        run: |
+          cd ${TF_PATH}
+          terraform validate
+      - name: Terraform Plan/Apply
+        run: |
+          cd ${TF_PATH}
+          MODULE_OPTION="-target=module.${{ github.event.inputs.terraform_module }}"
+          if [[ "${{ github.event.inputs.terraform_action }}" == "apply" ]]; then
+            AUTO_APPROVE="--auto-approve"
+          else
+            AUTO_APPROVE=""
+          fi
+          terraform ${{ github.event.inputs.terraform_action }} -var-file="$TF_VAR_file" $MODULE_OPTION $AUTO_APPROVE
