@@ -5,7 +5,6 @@ on:
       source_keyvault:
         type: string
         description: source_keyvault
-        default: plan
       destination_keyvault:
         type: string
         description: destination_keyvault
@@ -26,8 +25,8 @@ jobs:
       - name: 'Azure PowerShell Action'
         run: |
            
-            SOURCE_KEYVAULT_NAME= ${{ github.event.inputs.source_keyvault }}
-            TARGET_KEYVAULT_NAME= ${{ github.event.inputs.destination_keyvault }}
+            SOURCE_KEYVAULT_NAME="${{ github.event.inputs.source_keyvault }}"
+            TARGET_KEYVAULT_NAME="${{ github.event.inputs.destination_keyvault }}"
             SECRET_NAMES=$(az keyvault secret list --vault-name $SOURCE_KEYVAULT_NAME --query "[].name" -o tsv)
             # Loop over each secret and copy it to the target KeyVault
             for SECRET_NAME in $SECRET_NAMES; do
