@@ -9,11 +9,11 @@ on:
         type: string
         description: destination_keyvault
 env:
-    clientId: "a5c0e815-b4dd-4453-9d3d-c6d611cfda7e",
-    clientSecret: "Q0J8Q~Dri.BbRPjiUspL6XFQQSr-glUF2C11Rbgv",
-    subscriptionId: "d1235549-70af-4c68-ac5a-8f63dc87fdb6",
-    tenantId: "d30ea4cb-2410-4a99-9194-e7e6a4adcfff",
-    resourceManagerEndpointUrl: "https://management.azure.com/",
+    clientId: "a5c0e815-b4dd-4453-9d3d-c6d611cfda7e"
+    clientSecret: "Q0J8Q~Dri.BbRPjiUspL6XFQQSr-glUF2C11Rbgv"
+    subscriptionId: "d1235549-70af-4c68-ac5a-8f63dc87fdb6"
+    tenantId: "d30ea4cb-2410-4a99-9194-e7e6a4adcfff"
+    resourceManagerEndpointUrl: "https://management.azure.com/"
 jobs:
   azlogin:
     runs-on: ubuntu-latest
