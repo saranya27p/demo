@@ -2,7 +2,14 @@ on:
   push:
     branches: [ "main" ]
   pull_request:
-    branches: [ "main" ]
+inputs:
+  SourceKV:
+  description: 'SourceKV'
+  required: true
+inputs:
+  DestinationKv:
+  description: 'DestinationKv'
+  required: true
 jobs:
   azlogin:
     runs-on: ubuntu-latest
