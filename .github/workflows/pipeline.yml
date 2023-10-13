@@ -1,15 +1,32 @@
 on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-inputs:
-  SourceKV:
-  description: 'SourceKV'
-  required: true
-inputs:
-  DestinationKv:
-  description: 'DestinationKv'
-  required: true
+  workflow_dispatch: 
+    inputs:
+      source_keyvault:
+        type: string
+        description: Select source action
+        default: plan
+        # options: 
+        #   - apply
+        #   - plan
+      destination_keyvault:
+        type: choice
+        description: destination_keyvault
+        default: product_rg
+        # options: 
+        #   - aks-cluster
+        #   - aks-externalService-proxies
+        #   - ampls
+        #   - applications-helm
+        #   - ekyc
+        #   - esign
+        #   - fluxcd
+        #   - kubernetes-helm
+        #   - monitoring
+        #   - ocr
+        #   - otds
+        #   - postgresql
+        #   - product_rg
+        #   - smtp-relay
 jobs:
   azlogin:
     runs-on: ubuntu-latest
