@@ -3,30 +3,11 @@ on:
     inputs:
       source_keyvault:
         type: string
-        description: Select source action
+        description: source_keyvault
         default: plan
-        # options: 
-        #   - apply
-        #   - plan
       destination_keyvault:
         type: choice
         description: destination_keyvault
-        default: product_rg
-        # options: 
-        #   - aks-cluster
-        #   - aks-externalService-proxies
-        #   - ampls
-        #   - applications-helm
-        #   - ekyc
-        #   - esign
-        #   - fluxcd
-        #   - kubernetes-helm
-        #   - monitoring
-        #   - ocr
-        #   - otds
-        #   - postgresql
-        #   - product_rg
-        #   - smtp-relay
 jobs:
   azlogin:
     runs-on: ubuntu-latest
@@ -40,3 +21,11 @@ jobs:
       
       - name: 'Run basic AZ CLI command'
         run: az account show
+
+      - name: 'Azure PowerShell Action'
+        run: |
+           az account show
+           az keyvault show --name ${{ github.event.inputs.source_keyvault }}
+
+
+        
