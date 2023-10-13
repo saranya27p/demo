@@ -35,20 +35,21 @@ jobs:
           cd ${TF_PATH}
           terraform version
       - name: Terraform Init
-        run: |
-          cd ${TF_PATH}
-          terraform init  -backend-config="resource_group_name=${BACKEND_CONFIG_RESOURCE_GROUP_NAME}" -backend-config="storage_account_name=${BACKEND_CONFIG_STORAGE_ACCOUNT_NAME}" -backend-config="container_name=${BACKEND_CONFIG_CONTAINER_NAME}" -backend-config="key=${BACKEND_CONFIG_KEY}"
+        run: terraform init
       - name: Terraform Validate
+        run: terraform validate
+      - name: Terraform Plan
+        id: tf-plan
         run: |
-          cd ${TF_PATH}
-          terraform validate
-      - name: Terraform Plan/Apply
-        run: |
-          cd ${TF_PATH}
-          MODULE_OPTION="-target=module.${{ github.event.inputs.terraform_module }}"
-          if [[ "${{ github.event.inputs.terraform_action }}" == "apply" ]]; then
-            AUTO_APPROVE="--auto-approve"
-          else
-            AUTO_APPROVE=""
-          fi
-          terraform ${{ github.event.inputs.terraform_action }} -var-file="$TF_VAR_file" $MODULE_OPTION $AUTO_APPROVE
+         export exitcode=0
+          terraform plan -detailed-exitcode -no-color -out tfplan || export exitcode=$?
+
+          echo "exitcode=$exitcode" >> $GITHUB_OUTPUT
+        
+          if [ $exitcode -eq 1 ]; then
+          echo Terraform Plan Failed!
+          exit 1
+           else 
+          exit 0
+           fi
+           E
