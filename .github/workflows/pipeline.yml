@@ -1,3 +1,4 @@
+name: Keyvault migration
 on:
   workflow_dispatch: 
     inputs:
@@ -6,7 +7,7 @@ on:
         description: source_keyvault
         default: plan
       destination_keyvault:
-        type: choice
+        type: string
         description: destination_keyvault
 jobs:
   azlogin:
@@ -24,8 +25,18 @@ jobs:
 
       - name: 'Azure PowerShell Action'
         run: |
-           az account show
-           az keyvault show --name ${{ github.event.inputs.source_keyvault }}
+           
+            SOURCE_KEYVAULT_NAME= ${{ github.event.inputs.source_keyvault }}
+            TARGET_KEYVAULT_NAME= ${{ github.event.inputs.destination_keyvault }}
+            SECRET_NAMES=$(az keyvault secret list --vault-name $SOURCE_KEYVAULT_NAME --query "[].name" -o tsv)
+            # Loop over each secret and copy it to the target KeyVault
+            for SECRET_NAME in $SECRET_NAMES; do
+                echo "Migrating secret: $SECRET_NAME"
+                # Get the secret value from the source KeyVault
+                SECRET_VALUE=$(az keyvault secret show --name $SECRET_NAME --vault-name $SOURCE_KEYVAULT_NAME --query "value" -o tsv)
+                # Set the secret value in the target KeyVault
+                az keyvault secret set --name $SECRET_NAME --vault-name $TARGET_KEYVAULT_NAME --value "$SECRET_VALUE"
+            done
 
 
         
