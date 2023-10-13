@@ -7,7 +7,7 @@ on:
   workflow_dispatch: 
     inputs:
       terraform_action:
-        type: option
+        type: choice
         description: Select terraform action
         options: 
           - apply
