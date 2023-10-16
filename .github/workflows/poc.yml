@@ -1,88 +1,145 @@
-name: poc
+name: INTP 10-50
 
-on: 
-  push:
-    branches:
-      - poc
-  workflow_dispatch: 
+# Controls when the action will run. Manual trigger
+on:
+  workflow_dispatch: # Manual trigger.
     inputs:
       terraform_action:
         type: choice
         description: Select terraform action
         default: plan
-        options: 
-          - apply
-          - plan
+        options:
+        - apply
+        - plan
+      terraform_run_mode:
+        type: choice
+        description: Select terraform run mode
+        default: normal
+        options:
+          - normal
+          - module
       terraform_module:
         type: choice
         description: Select terraform Module
-        default: product_rg
-        options: 
-          - aks-cluster
-          - aks-externalService-proxies
-          - ampls
-          - applications-helm
-          - ekyc
-          - esign
-          - fluxcd
-          - kubernetes-helm
-          - monitoring
-          - ocr
-          - otds
-          - postgresql
-          - product_rg
-          - smtp-relay
-env:
-    ARM_SNAPSHOT: true
-    ARM_CLIENT_ID: 57ba6252-350f-48ba-9cee-603583c1a195
-    ARM_CLIENT_SECRET: ${{ secrets.ARM_NON_PROD_CLIENT_SECRET }}
-    ARM_SUBSCRIPTION_ID: 7f2b9a96-2609-4bc1-aec0-de68d59e6d1b
-    ARM_TENANT_ID: 9652d7c2-1ccf-4940-8151-4a92bd474ed0
-    TF_PATH: ./terraform/eConCloud/
-    VAR_PATH: ./terraform/eConCloud/
-    BACKEND_CONFIG_RESOURCE_GROUP_NAME: terraform-resources
-    BACKEND_CONFIG_STORAGE_ACCOUNT_NAME: storacctterraform
-    BACKEND_CONFIG_CONTAINER_NAME: terraform
-    BACKEND_CONFIG_KEY: aks-POC
+        default: 10-network
+        options:
+          - 10-network
+          - 20-foundation
+          - 30-storage
+          - 40-databases
+          - 50-aks
+  pull_request:
+    paths:
+      - 'env/prod/**'
+      - 'env/intp/**'
 
 jobs:
-  Terraform_Apply_Plan:
+  intp-10-50-module:
+    #name: Terraform ${{ github.event.inputs.terraform_action }} ${{ github.event.inputs.terraform_module }} in intp environment
+    name: Terraform module execution
+    environment:
+      name: intp
     runs-on: [self-hosted, aks-gha-runners]
-    env:
-      TF_VAR_file: "POC.tfvars"
+    if: ${{ github.event.inputs.terraform_run_mode == 'module' }}
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v2
+
+      # Checkout terraform
+      - uses: hashicorp/setup-terraform@v1
         with:
-            terraform_version: 1.5.5
+          terraform_version: 1.5.5
 
       - name: Login to Git Daimler
         run: |
-          git config --global url."https://x-access-token:${{secrets.TF_GITHUB_TOKEN}}@git.i.mercedes-benz.com/eConWMD-Azure/eConCloud".insteadOf "https://git.i.mercedes-benz.com/"
-          pwd
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v1
+          git config --global url."https://x-access-token:${{secrets.TF_GITHUB_TOKEN}}@git.i.mercedes-benz.com/".insteadOf "https://git.i.mercedes-benz.com/"
 
       - name: Show terraform version
         run: |
-          cd ${TF_PATH}
+          cd ${TF_PATH}${{ github.event.inputs.terraform_module }}
           terraform version
-      - name: Terraform Init
+
+      - name: Create terraform plan for ${{ github.event.inputs.terraform_module }}
+        id: plan
         run: |
-          cd ${TF_PATH}
-          terraform init  -backend-config="resource_group_name=${BACKEND_CONFIG_RESOURCE_GROUP_NAME}" -backend-config="storage_account_name=${BACKEND_CONFIG_STORAGE_ACCOUNT_NAME}" -backend-config="container_name=${BACKEND_CONFIG_CONTAINER_NAME}" -backend-config="key=${BACKEND_CONFIG_KEY}"
-      - name: Terraform Validate
+          cd ${TF_PATH}${{ github.event.inputs.terraform_module }}
+          terraform init -backend-config="key=${{ github.event.inputs.terraform_module }}" -backend-config="resource_group_name=${BACKEND_CONFIG_RESOURCE_GROUP_NAME}" -backend-config="storage_account_name=${BACKEND_CONFIG_STORAGE_ACCOUNT_NAME}" -backend-config="container_name=${BACKEND_CONFIG_CONTAINER_NAME}"
+          terraform plan -var-file="${VAR_PATH}${{ github.event.inputs.terraform_module }}/${{ github.event.inputs.terraform_module }}.auto.tfvars" -out plan
+
+      - name: Apply terraform plan for ${{ github.event.inputs.terraform_module }}
+        if: ${{ github.event_name != 'pull_request' && github.event.inputs.terraform_action == 'apply' }}
         run: |
-          cd ${TF_PATH}
+          cd ${TF_PATH}${{ github.event.inputs.terraform_module }}
+          terraform init -backend-config="key=${{ github.event.inputs.terraform_module }}" -backend-config="resource_group_name=${BACKEND_CONFIG_RESOURCE_GROUP_NAME}" -backend-config="storage_account_name=${BACKEND_CONFIG_STORAGE_ACCOUNT_NAME}" -backend-config="container_name=${BACKEND_CONFIG_CONTAINER_NAME}"
+          terraform apply plan
+
+  intp-10-50:
+    environment:
+      name: intp
+
+    # The type of runner that the job will run on
+    runs-on: [self-hosted, aks-gha-runners]
+    if: ${{ github.event.inputs.terraform_run_mode != 'module' }}
+    timeout-minutes: 30
+    strategy:
+      max-parallel: 1
+      fail-fast: false
+      matrix:
+        module:
+          - 10-network
+          - 20-foundation
+          - 30-storage
+          - 40-databases
+          - 50-aks
+
+    env:
+       ARM_CLIENT_ID: a5c0e815-b4dd-4453-9d3d-c6d611cfda7e
+       clientSecret: Q0J8Q~Dri.BbRPjiUspL6XFQQSr-glUF2C11Rbgv
+       ARM_SUBSCRIPTION_ID: d1235549-70af-4c68-ac5a-8f63dc87fdb6
+       ARM_TENANT_ID: d30ea4cb-2410-4a99-9194-e7e6a4adcfff
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      - uses: actions/checkout@v2
+
+      # Checkout terraform
+      - uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_version: 1.1.7
+
+      - name: Login to Git Daimler
+        run: |
+          git config --global url."https://x-access-token:${{secrets.TF_GITHUB_TOKEN}}@git.i.mercedes-benz.com/".insteadOf "https://git.i.mercedes-benz.com/"
+
+      - name: Validate and check format of terraform
+        if: ${{ github.event_name == 'pull_request'}}
+        run: |
+          cd ${TF_PATH}${{ matrix.module }}
+          terraform init -backend=false
           terraform validate
-      - name: Terraform Plan/Apply
+
+      - name: Create terraform plan
+        id: plan
         run: |
-          cd ${TF_PATH}
-          MODULE_OPTION="-target=module.${{ github.event.inputs.terraform_module }}"
-          if [[ "${{ github.event.inputs.terraform_action }}" == "apply" ]]; then
-            AUTO_APPROVE="--auto-approve"
-          else
-            AUTO_APPROVE=""
-          fi
-          terraform ${{ github.event.inputs.terraform_action }} -var-file="$TF_VAR_file" $MODULE_OPTION $AUTO_APPROVE
+          cd ${TF_PATH}${{ matrix.module }}
+          terraform init -backend-config="key=${{ matrix.module }}" -backend-config="resource_group_name=${BACKEND_CONFIG_RESOURCE_GROUP_NAME}" -backend-config="storage_account_name=${BACKEND_CONFIG_STORAGE_ACCOUNT_NAME}" -backend-config="container_name=${BACKEND_CONFIG_CONTAINER_NAME}"
+          terraform plan -var-file="${VAR_PATH}${{ matrix.module }}/${{ matrix.module }}.auto.tfvars" -out plan
+
+      - name: Post plan diff to PR
+        uses: robburger/terraform-pr-commenter@v1
+        if: always() && github.event_name == 'pull_request' && (steps.plan.outcome == 'success' || steps.plan.outcome == 'failure')
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.TF_GITHUB_TOKEN }}
+          TF_WORKSPACE:  ${{ github.workflow }}
+          EXPAND_SUMMARY_DETAILS: false
+        with:
+          commenter_type: plan
+          commenter_input: ${{ format('{0}{1}', steps.plan.outputs.stdout, steps.plan.outputs.stderr) }}
+          commenter_exitcode: ${{ steps.plan.outputs.exitcode }}
+
+      - name: Apply terraform plan
+        if: ${{ github.event_name != 'pull_request' && github.event.inputs.terraform_action  == 'apply' }}
+        run: |
+          cd ${TF_PATH}${{ matrix.module }}
+          terraform init -backend-config="key=${{ matrix.module }}" -backend-config="resource_group_name=${BACKEND_CONFIG_RESOURCE_GROUP_NAME}" -backend-config="storage_account_name=${BACKEND_CONFIG_STORAGE_ACCOUNT_NAME}" -backend-config="container_name=${BACKEND_CONFIG_CONTAINER_NAME}"
+          terraform apply plan
