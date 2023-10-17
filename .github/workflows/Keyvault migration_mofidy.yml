@@ -38,8 +38,8 @@ jobs:
         run: |
           SOURCE_KEYVAULT_NAME="${{ github.event.inputs.source_keyvault }}"
           TARGET_KEYVAULT_NAME="${{ github.event.inputs.destination_keyvault }}"
-          SECRET_NAMES="${{ github.event.inputs.SECRET_NAMES }}"  # Use the provided SECRET_NAMES
-          SECRET_VALUE=$(az keyvault secret show --name $SECRET_NAME --vault-name $SOURCE_KEYVAULT_NAME --query "[?!(contains(name, 'ekyc') || contains(name, 'camunda'))].name" -o tsv)
+          SECRET_NAMES="$(az keyvault secret list --vault-name kvdemo1 --query "[?!(contains(name, 'demo') || contains(name, 'app'))].name" -o tsv)
+          SECRET_VALUE=$(az keyvault secret show --name $SECRET_NAME --vault-name $SOURCE_KEYVAULT_NAME --query "value" -o tsv)
           az keyvault secret set --name $SECRET_NAME --vault-name $TARGET_KEYVAULT_NAME --value "$SECRET_VALUE"
           done
 
