@@ -33,14 +33,18 @@ jobs:
             SOURCE_KEYVAULT_NAME="${{ github.event.inputs.source_keyvault }}"
             TARGET_KEYVAULT_NAME="${{ github.event.inputs.destination_keyvault }}"
             SECRET_NAMES=$(az keyvault secret list --vault-name $SOURCE_KEYVAULT_NAME --query "[].name" -o tsv)
-            # Loop over each secret and copy it to the target KeyVault
+            SEARCH_STRING="YOUR_SEARCH_STRING"  # Replace with your search string
+
             for SECRET_NAME in $SECRET_NAMES; do
-                echo "Migrating secret: $SECRET_NAME"
-                # Get the secret value from the source KeyVault
-                SECRET_VALUE=$(az keyvault secret show --name $SECRET_NAME --vault-name $SOURCE_KEYVAULT_NAME --query "value" -o tsv)
-                # Set the secret value in the target KeyVault
-                az keyvault secret set --name $SECRET_NAME --vault-name $TARGET_KEYVAULT_NAME --value "$SECRET_VALUE"
+            if [[ $SECRET_NAME == *"$SEARCH_STRING"* ]]; then
+            echo "Migrating secret: $SECRET_NAME"
+            SECRET_VALUE=$(az keyvault secret show --name $SECRET_NAME --vault-name $SOURCE_KEYVAULT_NAME --query "value" -o tsv)
+            az keyvault secret set --name $SECRET_NAME --vault-name $TARGET_KEYVAULT_NAME --value "$SECRET_VALUE"
+             else
+            echo "Skipping secret: $SECRET_NAME as it doesn't contain the search string."
+             fi
             done
+
 
 
         
