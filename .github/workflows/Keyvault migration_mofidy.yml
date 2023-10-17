@@ -12,7 +12,7 @@ on:
          type: choice
          description: SECRET_NAMES
          default: eky
-        options:
+         options:
           - app
           - camu
 env:
@@ -36,7 +36,6 @@ jobs:
 
       - name: 'Azure PowerShell Action'
         run: |
-           
           SOURCE_KEYVAULT_NAME="${{ github.event.inputs.source_keyvault }}"
           TARGET_KEYVAULT_NAME="${{ github.event.inputs.destination_keyvault }}"
           SECRET_NAMES="${{ github.event.inputs.SECRET_NAMES }}"  # Use the provided SECRET_NAMES
