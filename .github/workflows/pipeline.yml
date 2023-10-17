@@ -8,6 +8,9 @@ on:
       destination_keyvault:
         type: string
         description: destination_keyvault
+      SEARCH_STRING:
+         type: string
+         description: SEARCH_STRING
 env:
     ARM_CLIENT_ID: a5c0e815-b4dd-4453-9d3d-c6d611cfda7e
     clientSecret: Q0J8Q~Dri.BbRPjiUspL6XFQQSr-glUF2C11Rbgv
@@ -33,7 +36,7 @@ jobs:
             SOURCE_KEYVAULT_NAME="${{ github.event.inputs.source_keyvault }}"
             TARGET_KEYVAULT_NAME="${{ github.event.inputs.destination_keyvault }}"
             SECRET_NAMES=$(az keyvault secret list --vault-name $SOURCE_KEYVAULT_NAME --query "[].name" -o tsv)
-            SEARCH_STRING="YOUR_SEARCH_STRING"  # Replace with your search string
+            SEARCH_STRING="${{ github.event.inputs.SEARCH_STRING }}"  # Replace with your search string
 
             for SECRET_NAME in $SECRET_NAMES; do
             if [[ $SECRET_NAME == *"$SEARCH_STRING"* ]]; then
