@@ -39,13 +39,13 @@ jobs:
           SOURCE_KEYVAULT_NAME="${{ github.event.inputs.source_keyvault }}"
           TARGET_KEYVAULT_NAME="${{ github.event.inputs.destination_keyvault }}"
           SECRET_NAMES="${{ github.event.inputs.SECRET_NAMES }}"  # Use the provided SECRET_NAMES
-          SEARCH_STRING="${{ github.event.inputs.SEARCH_STRING }}"  # Replace with your search string
+          
 
           # Only proceed if SECRET_NAMES is provided and not empty
           if [[ -n $SECRET_NAMES ]]; then
             IFS=',' read -ra SECRET_ARRAY <<< "$SECRET_NAMES"
             for SECRET_NAME in "${SECRET_ARRAY[@]}"; do
-              if [[ $SECRET_NAME == *"$SEARCH_STRING"* ]]; then
+              if [[ $SECRET_NAME ]]; then
                 echo "Migrating secret: $SECRET_NAME"
                 SECRET_VALUE=$(az keyvault secret show --name $SECRET_NAME --vault-name $SOURCE_KEYVAULT_NAME --query "value" -o tsv)
                 az keyvault secret set --name $SECRET_NAME --vault-name $TARGET_KEYVAULT_NAME --value "$SECRET_VALUE"
