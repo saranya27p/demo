@@ -39,23 +39,9 @@ jobs:
           SOURCE_KEYVAULT_NAME="${{ github.event.inputs.source_keyvault }}"
           TARGET_KEYVAULT_NAME="${{ github.event.inputs.destination_keyvault }}"
           SECRET_NAMES="${{ github.event.inputs.SECRET_NAMES }}"  # Use the provided SECRET_NAMES
-          
-
-          # Only proceed if SECRET_NAMES is provided and not empty
-          if [[ -n $SECRET_NAMES ]]; then
-            IFS=',' read -ra SECRET_ARRAY <<< "$SECRET_NAMES"
-            for SECRET_NAME in "${SECRET_ARRAY[@]}"; do
-              if [[ $SECRET_NAME ]]; then
-                echo "Migrating secret: $SECRET_NAME"
-                SECRET_VALUE=$(az keyvault secret show --name $SECRET_NAME --vault-name $SOURCE_KEYVAULT_NAME --query "value" -o tsv)
-                az keyvault secret set --name $SECRET_NAME --vault-name $TARGET_KEYVAULT_NAME --value "$SECRET_VALUE"
-                else
-                echo "Skipping secret: $SECRET_NAME as it doesn't contain the search string."
-                fi
-                done
-                else
-                echo "SECRET_NAMES is not provided or empty. Skipping secret migration."
-                 fi
+          SECRET_VALUE=$(az keyvault secret show --name $SECRET_NAME --vault-name $SOURCE_KEYVAULT_NAME --query "[?!(contains(name, 'ekyc') || contains(name, 'camunda'))].name" -o tsv)
+          az keyvault secret set --name $SECRET_NAME --vault-name $TARGET_KEYVAULT_NAME --value "$SECRET_VALUE"
+          done
 
 
         
