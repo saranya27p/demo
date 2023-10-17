@@ -8,9 +8,13 @@ on:
       destination_keyvault:
         type: string
         description: destination_keyvault
-      SEARCH_STRING:
-         type: string
-         description: SEARCH_STRING
+      SECRET_NAMES:
+         type: choice
+         description: SECRET_NAMES
+         default: eky
+        options:
+          - app
+          - camu
 env:
     ARM_CLIENT_ID: a5c0e815-b4dd-4453-9d3d-c6d611cfda7e
     clientSecret: Q0J8Q~Dri.BbRPjiUspL6XFQQSr-glUF2C11Rbgv
@@ -33,21 +37,26 @@ jobs:
       - name: 'Azure PowerShell Action'
         run: |
            
-            SOURCE_KEYVAULT_NAME="${{ github.event.inputs.source_keyvault }}"
-            TARGET_KEYVAULT_NAME="${{ github.event.inputs.destination_keyvault }}"
-            SECRET_NAMES=$(echo "${{ github.event.inputs.SECRET_NAMES }}" | tr ',' '\n')  # Replace with provided SECRET_NAMES
+          SOURCE_KEYVAULT_NAME="${{ github.event.inputs.source_keyvault }}"
+          TARGET_KEYVAULT_NAME="${{ github.event.inputs.destination_keyvault }}"
+          SECRET_NAMES="${{ github.event.inputs.SECRET_NAMES }}"  # Use the provided SECRET_NAMES
+          SEARCH_STRING="${{ github.event.inputs.SEARCH_STRING }}"  # Replace with your search string
 
-
-            for SECRET_NAME in $SECRET_NAMES; do
-            if echo "$SECRET_NAME" | findstr /C:"${{ github.event.inputs.SEARCH_STRING }}" > nul; then
-            echo "Migrating secret: $SECRET_NAME"
-            SECRET_VALUE=$(az keyvault secret show --name $SECRET_NAME --vault-name $SOURCE_KEYVAULT_NAME --query "value" -o tsv)
-            az keyvault secret set --name $SECRET_NAME --vault-name $TARGET_KEYVAULT_NAME --value "$SECRET_VALUE"
-            else
-            echo "Skipping secret: $SECRET_NAME as it doesn't contain the search string."
-            fi
-           done
-
+          # Only proceed if SECRET_NAMES is provided and not empty
+          if [[ -n $SECRET_NAMES ]]; then
+            IFS=',' read -ra SECRET_ARRAY <<< "$SECRET_NAMES"
+            for SECRET_NAME in "${SECRET_ARRAY[@]}"; do
+              if [[ $SECRET_NAME == *"$SEARCH_STRING"* ]]; then
+                echo "Migrating secret: $SECRET_NAME"
+                SECRET_VALUE=$(az keyvault secret show --name $SECRET_NAME --vault-name $SOURCE_KEYVAULT_NAME --query "value" -o tsv)
+                az keyvault secret set --name $SECRET_NAME --vault-name $TARGET_KEYVAULT_NAME --value "$SECRET_VALUE"
+                else
+                echo "Skipping secret: $SECRET_NAME as it doesn't contain the search string."
+                fi
+                done
+                else
+                echo "SECRET_NAMES is not provided or empty. Skipping secret migration."
+                 fi
 
 
         
