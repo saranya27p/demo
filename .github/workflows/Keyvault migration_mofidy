@@ -1,0 +1,53 @@
+name: Keyvault migration_mofidy
+on:
+  workflow_dispatch: 
+    inputs:
+      source_keyvault:
+        type: string
+        description: source_keyvault
+      destination_keyvault:
+        type: string
+        description: destination_keyvault
+      SEARCH_STRING:
+         type: string
+         description: SEARCH_STRING
+env:
+    ARM_CLIENT_ID: a5c0e815-b4dd-4453-9d3d-c6d611cfda7e
+    clientSecret: Q0J8Q~Dri.BbRPjiUspL6XFQQSr-glUF2C11Rbgv
+    ARM_SUBSCRIPTION_ID: d1235549-70af-4c68-ac5a-8f63dc87fdb6
+    ARM_TENANT_ID: d30ea4cb-2410-4a99-9194-e7e6a4adcfff
+jobs:
+  azlogin:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: 'Az CLI Login'
+        uses: azure/login@v1
+        with: 
+          creds: "{\"clientId\": \"${{ env.ARM_CLIENT_ID}}\", \"clientSecret\": \"${{ env.clientSecret }}\", \"subscriptionId\": \"${{ env.ARM_SUBSCRIPTION_ID}}\", \"tenantId\": \"${{ env.ARM_TENANT_ID}}\", \"resourceManagerEndpointUrl\": \"https://management.azure.com/\"}"
+      
+      - name: 'Run basic AZ CLI command'
+        run: az account show
+
+      - name: 'Azure PowerShell Action'
+        run: |
+           
+            SOURCE_KEYVAULT_NAME="${{ github.event.inputs.source_keyvault }}"
+            TARGET_KEYVAULT_NAME="${{ github.event.inputs.destination_keyvault }}"
+            SECRET_NAMES=$(echo "${{ github.event.inputs.SECRET_NAMES }}" | tr ',' '\n')  # Replace with provided SECRET_NAMES
+
+
+            for SECRET_NAME in $SECRET_NAMES; do
+            if echo "$SECRET_NAME" | findstr /C:"${{ github.event.inputs.SEARCH_STRING }}" > nul; then
+            echo "Migrating secret: $SECRET_NAME"
+            SECRET_VALUE=$(az keyvault secret show --name $SECRET_NAME --vault-name $SOURCE_KEYVAULT_NAME --query "value" -o tsv)
+            az keyvault secret set --name $SECRET_NAME --vault-name $TARGET_KEYVAULT_NAME --value "$SECRET_VALUE"
+            else
+            echo "Skipping secret: $SECRET_NAME as it doesn't contain the search string."
+            fi
+           done
+
+
+
+        
