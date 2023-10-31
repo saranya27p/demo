@@ -8,9 +8,16 @@ on:
       destination_keyvault:
         type: string
         description: destination_keyvault
-      SEARCH_STRING:
+      Secret_list:
          type: string
-         description: SEARCH_STRING
+         description: Secret_list
+      operation_type:   
+        type: choice
+        description: choose which operation to perform
+        default: all
+        options:
+          - all
+          - specific
 env:
     ARM_CLIENT_ID: a5c0e815-b4dd-4453-9d3d-c6d611cfda7e
     clientSecret: Q0J8Q~Dri.BbRPjiUspL6XFQQSr-glUF2C11Rbgv
@@ -19,6 +26,7 @@ env:
 jobs:
   azlogin:
     runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.operation_type == 'all' }}
     steps:
       - uses: actions/checkout@v3
       
@@ -27,27 +35,34 @@ jobs:
         with: 
           creds: "{\"clientId\": \"${{ env.ARM_CLIENT_ID}}\", \"clientSecret\": \"${{ env.clientSecret }}\", \"subscriptionId\": \"${{ env.ARM_SUBSCRIPTION_ID}}\", \"tenantId\": \"${{ env.ARM_TENANT_ID}}\", \"resourceManagerEndpointUrl\": \"https://management.azure.com/\"}"
       
-      - name: 'Run basic AZ CLI command'
-        run: az account show
-
       - name: 'Azure PowerShell Action'
         run: |
-           
             SOURCE_KEYVAULT_NAME="${{ github.event.inputs.source_keyvault }}"
             TARGET_KEYVAULT_NAME="${{ github.event.inputs.destination_keyvault }}"
             SECRET_NAMES=$(az keyvault secret list --vault-name $SOURCE_KEYVAULT_NAME --query "[].name" -o tsv)
-            SEARCH_STRING="${{ github.event.inputs.SEARCH_STRING }}"  # Replace with your search string
-
             for SECRET_NAME in $SECRET_NAMES; do
-            if [[ $SECRET_NAME == *"$SEARCH_STRING"* ]]; then
-            echo "Migrating secret: $SECRET_NAME"
-            SECRET_VALUE=$(az keyvault secret show --name $SECRET_NAME --vault-name $SOURCE_KEYVAULT_NAME --query "value" -o tsv)
-            az keyvault secret set --name $SECRET_NAME --vault-name $TARGET_KEYVAULT_NAME --value "$SECRET_VALUE"
-             else
-            echo "Skipping secret: $SECRET_NAME as it doesn't contain the search string."
-             fi
+                echo "Migrating secret: $SECRET_NAME"
+                SECRET_VALUE=$(az keyvault secret show --name $SECRET_NAME --vault-name $SOURCE_KEYVAULT_NAME --query "value" -o tsv)
+                az keyvault secret set --name $SECRET_NAME --vault-name $TARGET_KEYVAULT_NAME --value "$SECRET_VALUE"
             done
-
-
-
-        
+  specific:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.operation_type == 'specific' }}
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: 'Az CLI Login'
+        uses: azure/login@v1
+        with: 
+          creds: "{\"clientId\": \"${{ env.ARM_CLIENT_ID}}\", \"clientSecret\": \"${{ env.clientSecret }}\", \"subscriptionId\": \"${{ env.ARM_SUBSCRIPTION_ID}}\", \"tenantId\": \"${{ env.ARM_TENANT_ID}}\", \"resourceManagerEndpointUrl\": \"https://management.azure.com/\"}"
+      
+      - name: 'Azure PowerShell Action'
+        run: |
+            SOURCE_KEYVAULT_NAME="${{ github.event.inputs.source_keyvault }}"
+            TARGET_KEYVAULT_NAME="${{ github.event.inputs.destination_keyvault }}"
+            SECRET_NAMES="${{ github.event.inputs.Secret_list }}"
+            for SECRET_NAME in $SECRET_NAMES; do
+                echo "Migrating secret: $SECRET_NAME"
+                SECRET_VALUE=$(az keyvault secret show --name $SECRET_NAME --vault-name $SOURCE_KEYVAULT_NAME --query "value" -o tsv)
+                az keyvault secret set --name $SECRET_NAME --vault-name $TARGET_KEYVAULT_NAME --value "$SECRET_VALUE"
+            done
